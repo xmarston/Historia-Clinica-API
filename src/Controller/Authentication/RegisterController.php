@@ -2,9 +2,9 @@
 
 namespace App\Controller\Authentication;
 
+use App\Controller\RestController;
 use App\Entity\User;
 use Exception;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -13,7 +13,7 @@ use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 /**
  * @Route("/api", name="api_")
  */
-class RegisterController extends AbstractController
+class RegisterController extends RestController
 {
     /**
      * @Route("/register", name="register_user", methods={"POST"})
@@ -26,13 +26,12 @@ class RegisterController extends AbstractController
     {
         $em = $this->getDoctrine()->getManager();
 
-
         $user = [];
-        $message = "";
+        $error = false;
+        $errorMessage = "";
 
         try {
-            $code = 200;
-            $error = false;
+            $statusCode = 200;
 
             $name = $request->request->get('name');
             $email = $request->request->get('email');
@@ -46,17 +45,11 @@ class RegisterController extends AbstractController
             $em->persist($user);
             $em->flush();
         } catch (Exception $ex) {
-            $code = 500;
+            $statusCode = 500;
             $error = true;
-            $message = "An error has occurred trying to register the user - Error: {$ex->getMessage()}";
+            $errorMessage = "An error has occurred trying to register the user";
         }
 
-        $response = [
-            'code' => $code,
-            'error' => $error,
-            'data' => $code == 200 ? $user : $message,
-        ];
-
-        return $this->json($response);
+        return $this->response($statusCode, $user, $error, $errorMessage);
     }
 }
