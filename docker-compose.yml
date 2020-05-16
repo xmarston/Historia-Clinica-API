@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  database:
+    image: "bitnami/mariadb"
+    environment:
+      - MARIADB_DATABASE=HistoriaClinica
+      - MARIADB_USER=HCUser
+      - MARIADB_PASSWORD=HC1234
+      - MARIADB_ROOT_PASSWORD=1234
+    ports:
+      - "3308:3306"
+
+  php-fpm:
+    build:
+      context: ./php-fpm
+    depends_on:
+      - "database"
+    environment:
+      - DATABASE_URL=mysql://HCUser:HC1234@database:3306/HistoriaClinica?serverVersion=5.7
+    volumes:
+      - .:/var/www
+    command: >
+      sh -c "composer install ; wait-for-it database:3306 -- bin/console doctrine:migrations:migrate ;  php-fpm"
+
+  nginx:
+    build:
+      context: ./nginx
+    volumes:
+      - .:/var/www
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/sites/:/etc/nginx/sites-available
+      - ./nginx/conf.d/:/etc/nginx/conf.d
+      - ./logs:/var/log
+    depends_on:
+      - "php-fpm"
+    ports:
+      - "8080:80"
